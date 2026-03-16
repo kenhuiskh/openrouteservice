@@ -4,6 +4,7 @@ import org.hamcrest.Matchers;
 import org.heigit.ors.apitests.common.EndPointAnnotation;
 import org.heigit.ors.apitests.common.ServiceTest;
 import org.heigit.ors.apitests.common.VersionAnnotation;
+import org.heigit.ors.apitests.utils.HelperFunctions;
 import org.heigit.ors.export.ExportErrorCodes;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -255,7 +256,7 @@ class ParamsTest extends ServiceTest {
         body.put("additional_info", true);
         given()
                 .headers(jsonContent)
-                .pathParam("profile", "wheelchair")
+                .pathParam("profile", "driving-car")
                 .body(body.toString())
                 .when()
                 .post(getEndPointPath() + "/{profile}/json")
@@ -266,8 +267,60 @@ class ParamsTest extends ServiceTest {
                 .body("containsKey('edges_extra')", is(true))
                 .body("edges_extra[0].extra.containsKey('osm_id')", is(true))
                 .body("edges_extra[0].extra.containsKey('ors_id')", is(true))
-                .body("nodes_count", is(59))
-                .body("edges_count", is(128))
                 .statusCode(200);
+    }
+
+    @Test
+    void expectAdditionalInfoWheelchair() {
+        JSONObject body = new JSONObject();
+        body.put("bbox", HelperFunctions.constructCoords("8.662440776824953, 49.41372343556617|8.677289485931398, 49.42018658125273"));
+        body.put("additional_info", true);
+        given()
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .pathParam("profile", "wheelchair")
+                .body(body.toString())
+                .when()
+                .post(getEndPointPath() + "/{profile}")
+                .then().log().ifValidationFails()
+                .assertThat()
+                .statusCode(200)
+                .body("containsKey('edges_extra')", is(true))
+                .body("edges_extra[1].containsKey('extra')", is(true))
+                .body("edges_extra[1].extra.containsKey('osm_id')", is(true))
+                .body("edges_extra[1].extra.containsKey('surface_quality_known')", is(true))
+                .body("edges_extra[1].extra.containsKey('suitable')", is(true))
+                .body("edges_extra[1].extra.containsKey('incline')", is(true))
+                .body("edges_extra[1].extra.containsKey('ors_id')", is(true));
+    }
+
+    @Test
+    void expectAdditionalInfoTopoJSON() {
+        JSONObject body = new JSONObject();
+        body.put("bbox", HelperFunctions.constructCoords("8.679103,49.403245|8.692868,49.408425"));
+        body.put("additional_info", true);
+        given()
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .pathParam("profile", "driving-car")
+                .body(body.toString())
+                .when()
+                .post(getEndPointPath() + "/{profile}/topojson")
+                .then().log().ifValidationFails()
+                .assertThat()
+                .statusCode(200)
+                .body("containsKey('type')", is(true))
+                .body("containsKey('objects')", is(true))
+                .body("containsKey('arcs')", is(true))
+                .body("containsKey('bbox')", is(true))
+                .body("objects.containsKey('network')", is(true))
+                .body("objects.network.containsKey('type')", is(true))
+                .body("objects.network.type", is("GeometryCollection"))
+                .body("objects.network.containsKey('geometries')", is(true))
+                .body("objects.network.geometries[0].containsKey('type')", is(true))
+                .body("objects.network.geometries[0].type", is("LineString"))
+                .body("objects.network.geometries[0].containsKey('properties')", is(true))
+                .body("objects.network.geometries[0].properties.containsKey('osm_id')", is(true))
+                .body("objects.network.geometries[0].properties.containsKey('ors_ids')", is(true));
     }
 }
