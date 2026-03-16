@@ -72,10 +72,13 @@ public class TopoJsonExportResponse implements Serializable {
                     .weight(edgeWeight.getValue())
                     .nodeFrom((long) key.first)
                     .nodeTo((long) key.second);
-            if (exportResult.hasEdgeExtras() && exportResult.getEdgeExtras().containsKey(key))     {
+            if (exportResult.hasEdgeExtras()) {
                 Map<String, Object> edgeExtra = exportResult.getEdgeExtras().get(key);
-                if (edgeExtra.containsKey("ors_id")) {
-                    properties.orsId((Integer) edgeExtra.get("ors_id"));
+                if (edgeExtra != null && edgeExtra.containsKey("ors_id")) {
+                    Object orsIdObj = edgeExtra.get("ors_id");
+                    if (orsIdObj instanceof Number number) {
+                        properties.orsId(number.intValue());
+                    }
                 }
             }
             Geometry geometry = Geometry.builder()
@@ -137,7 +140,7 @@ public class TopoJsonExportResponse implements Serializable {
     }
 
     private static class BBox {
-        private double[] coords = {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
+        private final double[] coords = {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
 
         public void update(double x, double y) {
             coords[0] = Math.min(coords[0], x);
