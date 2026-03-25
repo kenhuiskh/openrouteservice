@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.heigit.ors.apitests.utils.CommonHeaders.jsonContent;
 
@@ -286,12 +287,11 @@ class ParamsTest extends ServiceTest {
                 .assertThat()
                 .statusCode(200)
                 .body("containsKey('edges_extra')", is(true))
-                .body("edges_extra[1].containsKey('extra')", is(true))
-                .body("edges_extra[1].extra.containsKey('osm_id')", is(true))
-                .body("edges_extra[1].extra.containsKey('surface_quality_known')", is(true))
-                .body("edges_extra[1].extra.containsKey('suitable')", is(true))
-                .body("edges_extra[1].extra.containsKey('incline')", is(true))
-                .body("edges_extra[1].extra.containsKey('ors_id')", is(true));
+                .body("edges_extra.find { it.edgeId == '11560->4802' }.extra", hasEntry("osm_id", 316529501))
+                .body("edges_extra.find { it.edgeId == '11560->4802' }.extra", hasEntry("surface_quality_known", false))
+                .body("edges_extra.find { it.edgeId == '11560->4802' }.extra", hasEntry("suitable", false))
+                .body("edges_extra.find { it.edgeId == '11560->4802' }.extra", hasEntry("incline", -1))
+                .body("edges_extra.find { it.edgeId == '11560->4802' }.extra", hasEntry("ors_id", 33294));
     }
 
     @Test
