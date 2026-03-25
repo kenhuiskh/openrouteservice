@@ -14,35 +14,20 @@
 
 package org.heigit.ors.api.responses.routing.geojson;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.json.simple.JSONObject;
 
 public class GeoJSONGeometry {
-
-    private final JSONObject json;
-
-    public GeoJSONGeometry(String type, Object coordinates) {
-        this.json = new JSONObject();
-        this.json.put("type", type);
-        this.json.put("coordinates", coordinates);
-    }
-
     @Schema(description = "The geometry type", example = "LineString")
     @JsonProperty("type")
-    public String getType() {
-        return (String) json.get("type");
-    }
+    public final String type;
 
     @Schema(description = "The coordinates array for the geometry")
     @JsonProperty("coordinates")
-    public Object getCoordinates() {
-        return json.get("coordinates");
-    }
+    final Object coordinates;
 
-    @JsonAnyGetter
-    public JSONObject getJson() {
-        return json;
+    public GeoJSONGeometry(String type, Object coordinates) {
+        this.type = type;
+        this.coordinates = coordinates;
     }
 }
