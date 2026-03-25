@@ -68,14 +68,22 @@ public class TopoJsonExportResponse implements Serializable {
                 arcsLocal.add(Arc.builder().coordinates(makeCoordinateList(edgeGeometries.get(key), bbox)).build());
                 edgeArcs.put(key, nextArc);
             }
-            Properties properties = Properties.builder()
+            Properties.PropertiesBuilder properties = Properties.builder()
                     .weight(edgeWeight.getValue())
                     .nodeFrom((long) key.first)
-                    .nodeTo((long) key.second)
-                    .build();
+                    .nodeTo((long) key.second);
+            if (exportResult.hasEdgeExtras()) {
+                Map<String, Object> edgeExtra = exportResult.getEdgeExtras().get(key);
+                if (edgeExtra != null && edgeExtra.containsKey("ors_id")) {
+                    Object orsIdObj = edgeExtra.get("ors_id");
+                    if (orsIdObj instanceof Number number) {
+                        properties.orsId(number.intValue());
+                    }
+                }
+            }
             Geometry geometry = Geometry.builder()
                     .type("LineString")
-                    .properties(properties)
+                    .properties(properties.build())
                     .arcs(List.of(nextArc))
                     .build();
             geometries.add(geometry);
@@ -85,8 +93,8 @@ public class TopoJsonExportResponse implements Serializable {
     private static void buildGeometriesFromTopoGeometries(ExportResult exportResult, BBox bbox, List<Geometry> geometries, List<Arc> arcsLocal) {
         Map<Long, TopoGeometry> topoGeometries = exportResult.getTopoGeometries();
         int arcCount = 0;
-        for (long osmId : topoGeometries.keySet()) {
-            TopoGeometry topoGeometry = topoGeometries.get(osmId);
+        for (Map.Entry<Long, TopoGeometry> entry : topoGeometries.entrySet()) {
+            TopoGeometry topoGeometry = entry.getValue();
             Map<Integer, ExportResult.TopoArc> arcs = topoGeometry.getArcs();
             List<Integer> orsIdList = arcs.keySet().stream().sorted().toList();
             List<Integer> arcList = new LinkedList<>();
@@ -105,7 +113,7 @@ public class TopoJsonExportResponse implements Serializable {
             }
 
             Properties properties = Properties.builder()
-                    .osmId(osmId)
+                    .osmId(entry.getKey())
                     .bothDirections(topoGeometry.isBothDirections())
                     .speed(topoGeometry.getSpeed())
                     .speedReverse(topoGeometry.isBothDirections() ? topoGeometry.getSpeedReverse() : null)
@@ -132,7 +140,7 @@ public class TopoJsonExportResponse implements Serializable {
     }
 
     private static class BBox {
-        private double[] coords = {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
+        private final double[] coords = {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
 
         public void update(double x, double y) {
             coords[0] = Math.min(coords[0], x);

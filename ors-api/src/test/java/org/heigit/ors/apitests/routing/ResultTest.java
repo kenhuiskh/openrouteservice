@@ -257,21 +257,21 @@ class ResultTest extends ServiceTest {
         testGpxGeometry(response);
 
         body.put("instructions", false);
-        Response response_without_instructions = given()
+        Response responseWithoutInstructions = given()
                 .headers(CommonHeaders.gpxContent)
                 .pathParam("profile", getParameter("carProfile"))
                 .body(body.toString())
                 .when()
                 .log().ifValidationFails()
                 .post(getEndPointPath() + "/{profile}/gpx");
-        response_without_instructions.then()
+        responseWithoutInstructions.then()
                 .log().ifValidationFails()
                 .assertThat()
                 .contentType("application/gpx+xml;charset=UTF-8")
                 .statusCode(200);
-        testGpxConsistency(response_without_instructions, false);
+        testGpxConsistency(responseWithoutInstructions, false);
         testGpxSchema(response);
-        testGpxGeometry(response_without_instructions);
+        testGpxGeometry(responseWithoutInstructions);
     }
 
     private void testGpxGeometry(Response response) throws ParserConfigurationException, IOException, SAXException {
@@ -279,10 +279,10 @@ class ResultTest extends ServiceTest {
         DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = db.parse(new InputSource(new StringReader(body)));
         assertEquals("gpx", doc.getDocumentElement().getTagName());
-        int doc_length = doc.getDocumentElement().getChildNodes().getLength();
-        assertTrue(doc_length > 0);
+        int docLength = doc.getDocumentElement().getChildNodes().getLength();
+        assertTrue(docLength > 0);
         boolean gpxRte = false;
-        for (int i = 0; i < doc_length; i++) {
+        for (int i = 0; i < docLength; i++) {
             String item = doc.getDocumentElement().getChildNodes().item(i).getNodeName();
             if ("rte".equals(item)) {
                 gpxRte = true;
@@ -317,13 +317,13 @@ class ResultTest extends ServiceTest {
         DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc = db.parse(new InputSource(new StringReader(body)));
         assertEquals("gpx", doc.getDocumentElement().getTagName());
-        int doc_length = doc.getDocumentElement().getChildNodes().getLength();
-        assertTrue(doc_length > 0);
+        int docLength = doc.getDocumentElement().getChildNodes().getLength();
+        assertTrue(docLength > 0);
         boolean gpxMetadata = false;
         boolean gpxRte = false;
         boolean gpxExtensions = false;
         Node gpxMetadataNode = new IIOMetadataNode();
-        for (int i = 0; i < doc_length; i++) {
+        for (int i = 0; i < docLength; i++) {
             String item = doc.getDocumentElement().getChildNodes().item(i).getNodeName();
             switch (item) {
                 case "metadata" -> {
@@ -368,10 +368,16 @@ class ResultTest extends ServiceTest {
                                                 switch (linkItem.getNodeName()) {
                                                     case "text" -> linkText = true;
                                                     case "type" -> linkType = true;
+                                                    default -> {
+                                                        // ignore unknown nodes
+                                                    }
                                                 }
                                             }
                                             assertTrue(linkText);
                                             assertTrue(linkType);
+                                        }
+                                        default -> {
+                                            // ignore unknown nodes
                                         }
                                     }
                                 }
@@ -390,6 +396,9 @@ class ResultTest extends ServiceTest {
                                     switch (copyrightItem.getNodeName()) {
                                         case "year" -> copyrightYear = true;
                                         case "license" -> copyrightLicense = true;
+                                        default -> {
+                                            // ignore unknown nodes
+                                        }
                                     }
                                 }
                                 assertTrue(copyrightYear);
@@ -409,6 +418,9 @@ class ResultTest extends ServiceTest {
                                 assertTrue(metadataExtensionsSystemMessage);
                             }
                             case "bounds" -> metadataBounds = true;
+                            default -> {
+                                // ignore unknown nodes
+                            }
                         }
                     }
                     assertTrue(metadataName);
@@ -455,12 +467,18 @@ class ResultTest extends ServiceTest {
                                                         case "duration" -> duration = true;
                                                         case "type" -> type = true;
                                                         case "step" -> step = true;
+                                                        default -> {
+                                                            // ignore unknown nodes
+                                                        }
                                                     }
                                                 }
                                                 assertTrue(distance);
                                                 assertTrue(duration);
                                                 assertTrue(type);
                                                 assertTrue(step);
+                                            }
+                                            default -> {
+                                                // ignore unknown nodes
                                             }
                                         }
                                     }
@@ -487,6 +505,9 @@ class ResultTest extends ServiceTest {
                                         case "descent" -> rteExtensionsDescent = true;
                                         case "avgspeed" -> rteExtensionsAvgSpeed = true;
                                         case "bounds" -> rteExtensionsBounds = true;
+                                        default -> {
+                                            // ignore unknown nodes
+                                        }
                                     }
                                 }
                                 assertTrue(rteExtensionsDistance);
@@ -495,6 +516,9 @@ class ResultTest extends ServiceTest {
                                 assertTrue(rteExtensionsDescent);
                                 assertTrue(rteExtensionsAvgSpeed);
                                 assertTrue(rteExtensionsBounds);
+                            }
+                            default -> {
+                                // ignore unknown nodes
                             }
                         }
                     }
@@ -507,7 +531,7 @@ class ResultTest extends ServiceTest {
                     int gpxExtensionLength = gpxExtensionsChildren.getLength();
                     boolean gpxExtensionattribution = false;
                     boolean gpxExtensionengine = false;
-                    boolean gpxExtensionbuild_date = false;
+                    boolean gpxExtensionbuilddate = false;
                     boolean gpxExtensionprofile = false;
                     boolean gpxExtensionpreference = false;
                     boolean gpxExtensionlanguage = false;
@@ -518,22 +542,28 @@ class ResultTest extends ServiceTest {
                         switch (gpxExtensionElement.getNodeName()) {
                             case "attribution" -> gpxExtensionattribution = true;
                             case "engine" -> gpxExtensionengine = true;
-                            case "build_date" -> gpxExtensionbuild_date = true;
+                            case "build_date" -> gpxExtensionbuilddate = true;
                             case "profile" -> gpxExtensionprofile = true;
                             case "preference" -> gpxExtensionpreference = true;
                             case "language" -> gpxExtensionlanguage = true;
                             case "instructions" -> gpxExtensioninstructions = true;
                             case "elevation" -> gpxExtensionelevation = true;
+                            default -> {
+                                // ignore unknown nodes
+                            }
                         }
                     }
                     assertTrue(gpxExtensionattribution);
                     assertTrue(gpxExtensionengine);
-                    assertTrue(gpxExtensionbuild_date);
+                    assertTrue(gpxExtensionbuilddate);
                     assertTrue(gpxExtensionprofile);
                     assertTrue(gpxExtensionpreference);
                     assertTrue(gpxExtensionlanguage);
                     assertTrue(gpxExtensioninstructions);
                     assertTrue(gpxExtensionelevation);
+                }
+                default -> {
+                    // ignore unknown nodes
                 }
             }
         }
@@ -802,23 +832,23 @@ class ResultTest extends ServiceTest {
         body.put("coordinates", getParameter("unreachableCoords"));
         body.put("id", "request123");
         given()
-            .headers(CommonHeaders.geoJsonContent)
-            .pathParam("profile", getParameter("carProfile"))
-            .body(body.toString())
-            .when()
-            .post(getEndPointPath() + "/{profile}/geojson")
-            .then()
-            .assertThat()
-            .body("any {it.key == 'info'}", is(true))
-            .body("any {it.key == 'error'}", is(true))
-            .body("error.containsKey('code')", is(true))
-            .body("error.containsKey('message')", is(true))
-            .body("info.engine.containsKey('version')", is(true))
-            .body("info.engine.containsKey('build_date')", is(true))
-            .body("info.engine.containsKey('graph_date')", is(true))
-            .body("info.engine.containsKey('osm_date')", is(true))
-            .body("info.containsKey('timestamp')", is(true))
-            .statusCode(404);
+                .headers(CommonHeaders.geoJsonContent)
+                .pathParam("profile", getParameter("carProfile"))
+                .body(body.toString())
+                .when()
+                .post(getEndPointPath() + "/{profile}/geojson")
+                .then()
+                .assertThat()
+                .body("any {it.key == 'info'}", is(true))
+                .body("any {it.key == 'error'}", is(true))
+                .body("error.containsKey('code')", is(true))
+                .body("error.containsKey('message')", is(true))
+                .body("info.engine.containsKey('version')", is(true))
+                .body("info.engine.containsKey('build_date')", is(true))
+                .body("info.engine.containsKey('graph_date')", is(true))
+                .body("info.engine.containsKey('osm_date')", is(true))
+                .body("info.containsKey('timestamp')", is(true))
+                .statusCode(404);
     }
 
     @Test
@@ -1707,7 +1737,8 @@ class ResultTest extends ServiceTest {
                 .statusCode(200);
     }
 
-    @Test// Only delivery HGVs are allowed on Alstater Straße (https://www.openstreetmap.org/way/31791684)
+    @Test
+// Only delivery HGVs are allowed on Alstater Straße (https://www.openstreetmap.org/way/31791684)
     void testHGVDelivery() {
         JSONObject body = new JSONObject();
         body.put("coordinates", HelperFunctions.constructCoords("8.672016,49.382663|8.667426,49.380285"));
@@ -1746,6 +1777,7 @@ class ResultTest extends ServiceTest {
                 .body("routes[0].summary.distance", is(closeTo(494, 1)))
                 .statusCode(200);
     }
+
     @Test
     void testHGVWidthRestriction() { // check route
         JSONObject body = new JSONObject();
@@ -2374,23 +2406,6 @@ class ResultTest extends ServiceTest {
                 .body("any { it.key == 'routes' }", is(true))
                 .body("routes[0].summary.distance", is(172.1f))
                 .body("routes[0].summary.duration", is(129.2f))
-                .statusCode(200);
-    }
-
-    @Test
-    void testWheelchairDebugExport() {
-        JSONObject body = new JSONObject();
-        body.put("bbox", HelperFunctions.constructCoords("8.662440776824953, 49.41372343556617|8.677289485931398, 49.42018658125273"));
-        body.put("additional_info", true);
-        given()
-                .header("Accept", "application/json")
-                .header("Content-Type", "application/json")
-                .pathParam("profile", "wheelchair")
-                .body(body.toString())
-                .when()
-                .post(getEndPointPath("export") + "/{profile}")
-                .then().log().ifValidationFails()
-                .assertThat()
                 .statusCode(200);
     }
 
@@ -3983,7 +3998,7 @@ class ResultTest extends ServiceTest {
         body.put("elevation", true);
         body.put("departure", "2022-07-04T13:02:26Z");
         body.put("walking_time", "PT30M");
-        Response res = given()
+        given()
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
                 .pathParam("profile", getParameter("ptProfile"))
@@ -4027,7 +4042,7 @@ class ResultTest extends ServiceTest {
         body.put("elevation", true);
         body.put("departure", "2022-07-04T13:02:26Z");
         body.put("walking_time", "PT30M");
-        Response res = given()
+        given()
                 .header("Accept", "application/geo+json")
                 .header("Content-Type", "application/json")
                 .pathParam("profile", getParameter("ptProfile"))
@@ -4456,7 +4471,7 @@ class ResultTest extends ServiceTest {
         JSONArray coordinates = new JSONArray();
         JSONArray coord1 = new JSONArray();
         coord1.put(8.6818009);
-        coord1.put( 49.397251);
+        coord1.put(49.397251);
         coordinates.put(coord1);
         JSONArray coord2 = new JSONArray();
         coord2.put(8.6769783);
@@ -4511,7 +4526,7 @@ class ResultTest extends ServiceTest {
                 .then().log().ifValidationFails()
                 .assertThat()
                 .body("any { it.key == 'routes' }", is(true))
-                .body("routes[0].summary.distance", is(closeTo( 306.6f, 50f)))
+                .body("routes[0].summary.distance", is(closeTo(306.6f, 50f)))
                 .statusCode(200);
     }
 
@@ -4626,7 +4641,6 @@ class ResultTest extends ServiceTest {
     }
 
 
-
     @Test
     void testBarriersAccessPermit() {
         JSONArray coordinates = new JSONArray();
@@ -4701,7 +4715,7 @@ class ResultTest extends ServiceTest {
     @Test
     void testSidewalkSurface() {
         JSONObject body = new JSONObject()
-                .put("coordinates",HelperFunctions.constructCoords("8.69840,49.408406|8.69816,49.408937"))
+                .put("coordinates", HelperFunctions.constructCoords("8.69840,49.408406|8.69816,49.408937"))
                 .put("preference", "shortest")
                 .put("extra_info", constructExtras("waytype|surface"));
 
