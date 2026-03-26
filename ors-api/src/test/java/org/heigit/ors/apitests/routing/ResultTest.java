@@ -13,6 +13,8 @@
  */
 package org.heigit.ors.apitests.routing;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.path.json.config.JsonPathConfig;
@@ -24,10 +26,12 @@ import org.heigit.ors.apitests.utils.CommonHeaders;
 import org.heigit.ors.apitests.utils.HelperFunctions;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -750,6 +754,39 @@ class ResultTest extends ServiceTest {
                 .body("metadata.containsKey('system_message')", is(true))
 
                 .statusCode(200);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"JSON", "GeoJSON"})
+    void testDuplicateFieldsInResponse(String format) {
+        format = format.toLowerCase();
+        JSONObject body = new JSONObject();
+        body.put("coordinates", getParameter("coordinatesShort"));
+
+        Response response = given()
+                .headers(format.equals("geojson") ? CommonHeaders.geoJsonContent : CommonHeaders.jsonContent)
+                .pathParam("profile", getParameter("carProfile"))
+                .body(body.toString())
+                .when().log().ifValidationFails()
+                .post(getEndPointPath() + "/{profile}/" + format)
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .response();
+
+        // Configure Jackson for strict duplicate detection
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+
+        // Attempt to parse the JSON
+        try {
+            // readTree validates the entire structure for duplicates
+            mapper.readTree(response.asString());
+        } catch (Exception e) {
+            // If Jackson detects a duplicate, it throws an exception
+            Assertions.fail(e.getMessage());
+        }
     }
 
     @Test
