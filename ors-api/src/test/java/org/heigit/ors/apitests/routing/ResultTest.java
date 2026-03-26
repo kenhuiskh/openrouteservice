@@ -779,14 +779,8 @@ class ResultTest extends ServiceTest {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
 
-        // Attempt to parse the JSON
-        try {
-            // readTree validates the entire structure for duplicates
-            mapper.readTree(response.asString());
-        } catch (Exception e) {
-            // If Jackson detects a duplicate, it throws an exception
-            Assertions.fail(e.getMessage());
-        }
+        // Attempt to parse the JSON and fail if any exception is thrown
+        Assertions.assertDoesNotThrow(() -> mapper.readTree(response.asString()));
     }
 
     @Test
