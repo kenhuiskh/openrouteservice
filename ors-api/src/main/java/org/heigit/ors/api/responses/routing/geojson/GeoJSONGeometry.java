@@ -24,7 +24,7 @@ public class GeoJSONGeometry {
 
     @Schema(description = "The coordinates array for the geometry")
     @JsonProperty("coordinates")
-    final Object coordinates;
+    public final Object coordinates;
 
     public GeoJSONGeometry(String type, Object coordinates) {
         this.type = type;
