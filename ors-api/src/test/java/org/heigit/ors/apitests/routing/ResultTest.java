@@ -26,7 +26,6 @@ import org.heigit.ors.apitests.utils.CommonHeaders;
 import org.heigit.ors.apitests.utils.HelperFunctions;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,8 +55,7 @@ import java.util.List;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @EndPointAnnotation(name = "directions")
 @VersionAnnotation(version = "v2")
@@ -776,11 +774,13 @@ class ResultTest extends ServiceTest {
                 .response();
 
         // Configure Jackson for strict duplicate detection
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+        ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+
+        // Small check to ensure the mapper fails on duplicate keys
+        assertThrows(IOException.class, () -> mapper.readTree("{\"foo\": \"bar\", \"foo\": \"bar\"}"));
 
         // Attempt to parse the JSON and fail if any exception is thrown
-        Assertions.assertDoesNotThrow(() -> mapper.readTree(response.asString()));
+        assertDoesNotThrow(() -> mapper.readTree(response.asString()));
     }
 
     @Test
