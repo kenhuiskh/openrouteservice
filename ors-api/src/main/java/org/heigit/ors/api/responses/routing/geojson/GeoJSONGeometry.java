@@ -16,18 +16,12 @@ package org.heigit.ors.api.responses.routing.geojson;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.json.simple.JSONArray;
 
-public class GeoJSONGeometry {
-    @Schema(description = "The geometry type", example = "LineString")
-    @JsonProperty("type")
-    public final String type;
+public record GeoJSONGeometry(
+        @Schema(description = "The geometry type", example = "LineString")
+        @JsonProperty("type") String type,
 
-    @Schema(description = "The coordinates array for the geometry")
-    @JsonProperty("coordinates")
-    public final Object coordinates;
-
-    public GeoJSONGeometry(String type, Object coordinates) {
-        this.type = type;
-        this.coordinates = coordinates;
-    }
-}
+        @Schema(description = "The coordinates array for the geometry")
+        @JsonProperty("coordinates") JSONArray coordinates
+) {}
