@@ -13,6 +13,8 @@
  */
 package org.heigit.ors.apitests.routing;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.path.json.config.JsonPathConfig;
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -52,8 +55,7 @@ import java.util.List;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @EndPointAnnotation(name = "directions")
 @VersionAnnotation(version = "v2")
@@ -750,6 +752,35 @@ class ResultTest extends ServiceTest {
                 .body("metadata.containsKey('system_message')", is(true))
 
                 .statusCode(200);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"JSON", "GeoJSON"})
+    void testDuplicateFieldsInResponse(String format) {
+        format = format.toLowerCase();
+        JSONObject body = new JSONObject();
+        body.put("coordinates", getParameter("coordinatesShort"));
+
+        Response response = given()
+                .headers(format.equals("geojson") ? CommonHeaders.geoJsonContent : CommonHeaders.jsonContent)
+                .pathParam("profile", getParameter("carProfile"))
+                .body(body.toString())
+                .when().log().ifValidationFails()
+                .post(getEndPointPath() + "/{profile}/" + format)
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .extract()
+                .response();
+
+        // Configure Jackson for strict duplicate detection
+        ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+
+        // Small check to ensure the mapper fails on duplicate keys
+        assertThrows(IOException.class, () -> mapper.readTree("{\"foo\": \"bar\", \"foo\": \"bar\"}"));
+
+        // Attempt to parse the JSON and fail if any exception is thrown
+        assertDoesNotThrow(() -> mapper.readTree(response.asString()));
     }
 
     @Test
